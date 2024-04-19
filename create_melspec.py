@@ -13,26 +13,35 @@ from PIL import Image
 
 train_data = pd.read_csv("train_metadata.csv")
 
+
 @dataclass
-class cfg():
+class cfg:
     MAXLEN: int = 1000000
     CHUNK_SIZE: int = 1000000
     NMELS: int = 256
     sample_audio_path: str = f"train_audio/{train_data.loc[0, 'filename']}"
 
 
-#Helper Functions
+# Helper Functions
+
 
 def normalize(x):
-    return np.float32(x)/2**15
+    return np.float32(x) / 2**15
+
 
 def read(file, norm=False):
-    try: a = AS.from_ogg(file)
-    except: return np.zeros(cfg.MAXLEN)
+    try:
+        a = AS.from_ogg(file)
+    except:
+        return np.zeros(cfg.MAXLEN)
     y = np.array(a.get_array_of_samples())
-    if a.channels == 2: y = y.reshape((-1, 2))
-    if norm: return a.frame_rate, normalize(y)
-    if not norm: return a.frame_rate, np.float32(y)
+    if a.channels == 2:
+        y = y.reshape((-1, 2))
+    if norm:
+        return a.frame_rate, normalize(y)
+    if not norm:
+        return a.frame_rate, np.float32(y)
+
 
 def to_imagenet(X, mean=None, std=None, norm_max=None, norm_min=None, eps=1e-6):
     mean = mean or X.mean()
@@ -51,32 +60,35 @@ def to_imagenet(X, mean=None, std=None, norm_max=None, norm_min=None, eps=1e-6):
     else:
         # Just zero
         V = np.zeros_like(Xstd, dtype=np.uint8)
-    return np.stack([V]*3, axis=-1)
+    return np.stack([V] * 3, axis=-1)
 
-def create_melspec(path:tuple):
 
+def create_melspec(path: tuple):
     spec_fname = "/".join(path[0].split("/")[-2:])
     save_path = f"{path[1]}/{spec_fname.replace('.ogg', '.png')}"
     sr, y = read(path[0])
-    y = librosa.util.fix_length(y, size=cfg.MAXLEN, mode='edge')
+    y = librosa.util.fix_length(y, size=cfg.MAXLEN, mode="edge")
     melspec = melspectrogram(y=y, n_mels=cfg.NMELS)
     melspec = Image.fromarray(librosa.power_to_db(melspec).astype(np.uint8))
     melspec.save(f"{save_path}")
 
 
 if __name__ == "__main__":
-    
-    #create the species folders
+    # create the species folders
     species = [x.strip() for x in open("labels.txt", "r").readlines()]
 
     ROOT = "/home/tensorthiru/CLEF/birdclef-2024/melspecs"
     for s in species:
         if not os.path.exists(f"{ROOT}/{s}"):
             os.makedirs(f"{ROOT}/{s}")
-    
-    audio_paths = [(f'/home/tensorthiru/CLEF/birdclef-2024/train_audio/{x}', ROOT) for x in train_data.filename.values]
+
+    audio_paths = [
+        (f"/home/tensorthiru/CLEF/birdclef-2024/train_audio/{x}", ROOT)
+        for x in train_data.filename.values
+    ]
     p = Pool(16)
     with p:
-        for i in tqdm(p.imap_unordered(create_melspec, audio_paths), total=len(audio_paths)):
+        for i in tqdm(
+            p.imap_unordered(create_melspec, audio_paths), total=len(audio_paths)
+        ):
             pass
-
