@@ -7,3 +7,4 @@ eBird_Taxonomy_v2021.csv
 melspecs.zip
 sample_submission.csv
 train_metadata.csv
+__pycache__/
