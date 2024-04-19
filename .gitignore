@@ -1,0 +1,9 @@
+.ipynb_checkpoints/
+melspecs/
+test_soundscapes/
+train_audio/
+unlabeled_soundscapes/
+eBird_Taxonomy_v2021.csv
+melspecs.zip
+sample_submission.csv
+train_metadata.csv
